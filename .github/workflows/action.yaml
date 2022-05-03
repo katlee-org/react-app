@@ -1,0 +1,36 @@
+name: npm tasks
+description: "Run common NPM tasks"
+
+inputs:
+  node-version:
+    description: "which node version to install"
+    required: true
+    default: "16.15.0"
+
+runs:
+  using: "composite"
+  steps:
+    - name: cache node_modules
+      uses: actions/cache@v1
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    - name: set node version
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ inputs.node-version }}
+    - name: install dependencies
+      run: npm ci
+    - name: run linter
+      run: npm run format:check
+    - name: run tests
+      run: npm run test -- --coverage
+      env:
+        CI: true
+    - name: upload code coverage
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-coverage
+        path: coverage
